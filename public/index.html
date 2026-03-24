@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Octra Network AI Agent</title>
+    <link rel="stylesheet" href="css/style.css">
+    <!-- CDN libs for markdown and code highlighting -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.0/marked.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+
+    <!-- Mobile Hamburger Button -->
+    <button class="hamburger-btn" id="hamburger-btn">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="logo-area">
+                <span class="logo-text">OCTRA</span>
+                <span class="logo-subtitle">Network</span>
+                <span class="logo-badge">AI Agent</span>
+            </div>
+        </div>
+
+        <nav class="sidebar-nav">
+            <a href="#" class="nav-item active" data-page="dashboard">
+                <i class="fas fa-gauge-high"></i>
+                <span>Dashboard</span>
+            </a>
+            <a href="#" class="nav-item" data-page="chat">
+                <i class="fas fa-comments"></i>
+                <span>Chat</span>
+            </a>
+            <a href="#" class="nav-item" data-page="autopilot">
+                <i class="fas fa-robot"></i>
+                <span>Autopilot</span>
+            </a>
+            <a href="#" class="nav-item" data-page="codelab">
+                <i class="fas fa-code"></i>
+                <span>Code Lab</span>
+            </a>
+            <a href="#" class="nav-item" data-page="settings">
+                <i class="fas fa-gear"></i>
+                <span>Settings</span>
+            </a>
+        </nav>
+
+        <div class="sidebar-footer">
+            <div id="connection-status" class="connection-status">
+                <span class="status-dot"></span>
+                <span class="status-text">OpenAI: Not Connected</span>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+
+        <!-- ==================== Dashboard Page ==================== -->
+        <div class="page active" id="page-dashboard">
+            <div class="page-header">
+                <h1>Dashboard</h1>
+                <p class="subtitle">Welcome to Octra Network AI Agent</p>
+            </div>
+
+            <!-- Stats row: 4 cards -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon"><i class="fas fa-comments"></i></div>
+                    <div class="stat-info">
+                        <span class="stat-value" id="stat-messages">0</span>
+                        <span class="stat-label">Messages</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon"><i class="fas fa-check-circle"></i></div>
+                    <div class="stat-info">
+                        <span class="stat-value" id="stat-tasks">0</span>
+                        <span class="stat-label">Tasks Completed</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon"><i class="fas fa-coins"></i></div>
+                    <div class="stat-info">
+                        <span class="stat-value" id="stat-tokens">0</span>
+                        <span class="stat-label">Tokens Used</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon"><i class="fas fa-bolt"></i></div>
+                    <div class="stat-info">
+                        <span class="stat-value" id="stat-provider">None</span>
+                        <span class="stat-label">Active Provider</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="section-card">
+                <h2>Quick Actions</h2>
+                <div class="quick-actions">
+                    <button class="action-btn" onclick="app.navigateTo('chat')"><i class="fas fa-comment-dots"></i> New Chat</button>
+                    <button class="action-btn" onclick="app.navigateTo('autopilot')"><i class="fas fa-rocket"></i> Start Autopilot</button>
+                    <button class="action-btn" onclick="app.navigateTo('codelab')"><i class="fas fa-terminal"></i> Code Lab</button>
+                    <button class="action-btn" onclick="app.navigateTo('settings')"><i class="fas fa-key"></i> Configure Keys</button>
+                </div>
+            </div>
+
+            <!-- Recent Activity -->
+            <div class="section-card">
+                <h2>Recent Activity</h2>
+                <div id="recent-activity" class="activity-list">
+                    <div class="empty-state"><i class="fas fa-history"></i><p>No recent activity yet. Start a chat or run autopilot!</p></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== Chat Page ==================== -->
+        <div class="page" id="page-chat">
+            <div class="page-header">
+                <h1>Chat</h1>
+                <div class="chat-controls">
+                    <select id="chat-provider" class="select-input">
+                        <option value="openai">OpenAI</option>
+                        <option value="claude">Claude</option>
+                    </select>
+                    <select id="chat-model" class="select-input">
+                        <option value="gpt-4o">GPT-4o</option>
+                        <option value="gpt-4">GPT-4</option>
+                        <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+                    </select>
+                    <button class="icon-btn" id="clear-chat-btn" title="Clear Chat"><i class="fas fa-trash"></i></button>
+                    <button class="icon-btn" id="export-chat-btn" title="Export Chat"><i class="fas fa-download"></i></button>
+                </div>
+            </div>
+            <div class="chat-container">
+                <div id="chat-messages" class="chat-messages">
+                    <div class="welcome-message">
+                        <div class="welcome-icon"><i class="fas fa-robot"></i></div>
+                        <h3>Octra Network AI Agent</h3>
+                        <p>Hello! I'm your AI assistant. Enter your API key in Settings, then ask me anything.</p>
+                    </div>
+                </div>
+                <div class="chat-input-area">
+                    <div class="typing-indicator" id="typing-indicator" style="display:none">
+                        <span></span><span></span><span></span>
+                    </div>
+                    <div class="input-row">
+                        <textarea id="chat-input" placeholder="Type your message... (Ctrl+Enter to send)" rows="1"></textarea>
+                        <button id="send-btn" class="send-btn"><i class="fas fa-paper-plane"></i></button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== Autopilot Page ==================== -->
+        <div class="page" id="page-autopilot">
+            <div class="page-header">
+                <h1>Autopilot</h1>
+                <p class="subtitle">Define a goal and let AI execute it step by step</p>
+            </div>
+
+            <div class="section-card">
+                <h2><i class="fas fa-crosshairs"></i> Define Your Goal</h2>
+                <textarea id="autopilot-goal" class="goal-input" placeholder="Example: Create a REST API for a todo app with authentication, write tests, and generate API documentation..." rows="4"></textarea>
+                <div class="autopilot-controls">
+                    <select id="autopilot-provider" class="select-input">
+                        <option value="openai">OpenAI</option>
+                        <option value="claude">Claude</option>
+                    </select>
+                    <select id="autopilot-model" class="select-input">
+                        <option value="gpt-4o">GPT-4o</option>
+                    </select>
+                    <button id="autopilot-start" class="primary-btn"><i class="fas fa-play"></i> Launch Autopilot</button>
+                    <button id="autopilot-stop" class="danger-btn" style="display:none"><i class="fas fa-stop"></i> Stop</button>
+                </div>
+            </div>
+
+            <div class="section-card" id="autopilot-progress" style="display:none">
+                <h2><i class="fas fa-tasks"></i> Execution Progress</h2>
+                <div class="progress-bar-container">
+                    <div class="progress-bar" id="autopilot-progress-bar" style="width:0%"></div>
+                </div>
+                <div id="autopilot-steps" class="steps-list"></div>
+            </div>
+
+            <div class="section-card" id="autopilot-results" style="display:none">
+                <h2><i class="fas fa-flag-checkered"></i> Results</h2>
+                <div id="autopilot-output" class="autopilot-output"></div>
+            </div>
+        </div>
+
+        <!-- ==================== Code Lab Page ==================== -->
+        <div class="page" id="page-codelab">
+            <div class="page-header">
+                <h1>Code Lab</h1>
+                <p class="subtitle">AI-powered code generation and analysis</p>
+            </div>
+            <div class="codelab-layout">
+                <div class="section-card codelab-input-panel">
+                    <h2><i class="fas fa-keyboard"></i> Input</h2>
+                    <textarea id="codelab-input" class="code-textarea" placeholder="Paste your code here or describe what you want to generate..." rows="15"></textarea>
+                    <div class="codelab-actions">
+                        <button class="action-btn" data-action="generate"><i class="fas fa-magic"></i> Generate</button>
+                        <button class="action-btn" data-action="analyze"><i class="fas fa-search"></i> Analyze</button>
+                        <button class="action-btn" data-action="refactor"><i class="fas fa-wrench"></i> Refactor</button>
+                        <button class="action-btn" data-action="explain"><i class="fas fa-book"></i> Explain</button>
+                    </div>
+                </div>
+                <div class="section-card codelab-output-panel">
+                    <h2><i class="fas fa-terminal"></i> Output</h2>
+                    <div id="codelab-output" class="code-output">
+                        <div class="empty-state"><i class="fas fa-code"></i><p>Output will appear here</p></div>
+                    </div>
+                    <button class="icon-btn copy-output-btn" id="copy-output-btn" title="Copy Output" style="display:none"><i class="fas fa-copy"></i> Copy</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== Settings Page ==================== -->
+        <div class="page" id="page-settings">
+            <div class="page-header">
+                <h1>Settings</h1>
+                <p class="subtitle">Configure your AI providers and preferences</p>
+            </div>
+
+            <!-- API Keys Section -->
+            <div class="section-card">
+                <h2><i class="fas fa-key"></i> API Keys</h2>
+                <p class="section-desc">Your keys are stored locally in your browser. They are never saved on our servers.</p>
+
+                <div class="setting-group">
+                    <label for="openai-key">OpenAI API Key</label>
+                    <div class="key-input-row">
+                        <input type="password" id="openai-key" placeholder="sk-..." class="text-input">
+                        <button class="icon-btn toggle-visibility" data-target="openai-key"><i class="fas fa-eye"></i></button>
+                        <button class="icon-btn save-key-btn" data-provider="openai"><i class="fas fa-save"></i></button>
+                    </div>
+                    <div class="key-status" id="openai-status"><i class="fas fa-circle"></i> Not configured</div>
+                </div>
+
+                <div class="setting-group">
+                    <label for="claude-key">Claude (Anthropic) API Key</label>
+                    <div class="key-input-row">
+                        <input type="password" id="claude-key" placeholder="sk-ant-..." class="text-input">
+                        <button class="icon-btn toggle-visibility" data-target="claude-key"><i class="fas fa-eye"></i></button>
+                        <button class="icon-btn save-key-btn" data-provider="claude"><i class="fas fa-save"></i></button>
+                    </div>
+                    <div class="key-status" id="claude-status"><i class="fas fa-circle"></i> Not configured</div>
+                </div>
+            </div>
+
+            <!-- Model Preferences -->
+            <div class="section-card">
+                <h2><i class="fas fa-sliders"></i> Model Preferences</h2>
+                <div class="setting-group">
+                    <label for="default-provider">Default Provider</label>
+                    <select id="default-provider" class="select-input">
+                        <option value="openai">OpenAI</option>
+                        <option value="claude">Claude</option>
+                    </select>
+                </div>
+                <div class="setting-group">
+                    <label for="temperature-slider">Temperature: <span id="temp-value">0.7</span></label>
+                    <input type="range" id="temperature-slider" min="0" max="2" step="0.1" value="0.7" class="range-input">
+                </div>
+                <div class="setting-group">
+                    <label for="max-tokens-input">Max Tokens</label>
+                    <input type="number" id="max-tokens-input" value="4096" min="100" max="128000" class="text-input">
+                </div>
+            </div>
+
+            <!-- Theme -->
+            <div class="section-card">
+                <h2><i class="fas fa-palette"></i> Appearance</h2>
+                <div class="setting-group">
+                    <label>Theme</label>
+                    <div class="theme-toggle">
+                        <button class="theme-btn active" data-theme="dark"><i class="fas fa-moon"></i> Dark</button>
+                        <button class="theme-btn" data-theme="light"><i class="fas fa-sun"></i> Light</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Danger Zone -->
+            <div class="section-card danger-zone">
+                <h2><i class="fas fa-exclamation-triangle"></i> Danger Zone</h2>
+                <button class="danger-btn" id="clear-all-data"><i class="fas fa-trash"></i> Clear All Data & Keys</button>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- Application Script -->
+    <script src="js/app.js"></script>
+</body>
+</html>
