@@ -1,4 +1,5 @@
 # Octra Network AI Agent
+![octra](https://github.com/0xgetz/octra-ai-agent/raw/refs/heads/main/octra_network_dashboard.png)
 
 A modern, full-featured AI Agent platform with autopilot capabilities. Supports both OpenAI and Anthropic Claude APIs. Users bring their own API keys - nothing stored server-side.
 
