@@ -1,1 +1,46 @@
-[object Object]
+{
+  "name": "octra-ai-agent",
+  "version": "2.0.0",
+  "description": "A modern, full-featured AI Agent platform with autopilot capabilities. Supports OpenAI and Anthropic Claude.",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "lint": "eslint ."
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "homepage": "https://github.com/0xgetz/octra-ai-agent#readme",
+  "bugs": {
+    "url": "https://github.com/0xgetz/octra-ai-agent/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/0xgetz/octra-ai-agent.git"
+  },
+  "keywords": [
+    "ai",
+    "agent",
+    "openai",
+    "claude",
+    "anthropic",
+    "autopilot",
+    "chatbot",
+    "express"
+  ],
+  "author": "0xgetz",
+  "license": "MIT",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "express-rate-limit": "^7.5.1",
+    "helmet": "^7.2.0",
+    "uuid": "^10.0.0"
+  },
+  "devDependencies": {
+    "eslint": "^10.1.0"
+  }
+}

@@ -5,31 +5,56 @@
 
 /* ── CSS Variables ── */
 :root {
-  --bg-primary: #0a0e1a;
+  /* Core colors (semantic aliases) */
+  --color-bg: #0a0e1a;
+  --color-surface: rgba(17, 24, 39, 0.8);
+  --color-border: rgba(99, 102, 241, 0.2);
+  --color-text: #f1f5f9;
+  --color-text-muted: #64748b;
+  --color-primary: #06b6d4;
+  --color-secondary: #8b5cf6;
+  --color-danger: #ef4444;
+
+  /* Spacing */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 40px;
+
+  /* Border radius */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+
+  /* Transitions */
+  --transition-fast: all 0.15s ease;
+  --transition-normal: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Legacy / extended tokens (kept for backward compat) */
+  --bg-primary: var(--color-bg);
   --bg-secondary: #111827;
-  --bg-card: rgba(17, 24, 39, 0.8);
+  --bg-card: var(--color-surface);
   --bg-card-hover: rgba(17, 24, 39, 0.95);
   --bg-input: rgba(30, 41, 59, 0.8);
-  --border-color: rgba(99, 102, 241, 0.2);
+  --border-color: var(--color-border);
   --border-glow: rgba(6, 182, 212, 0.4);
-  --text-primary: #f1f5f9;
+  --text-primary: var(--color-text);
   --text-secondary: #94a3b8;
-  --text-muted: #64748b;
-  --accent-cyan: #06b6d4;
-  --accent-purple: #8b5cf6;
+  --text-muted: var(--color-text-muted);
+  --accent-cyan: var(--color-primary);
+  --accent-purple: var(--color-secondary);
   --accent-pink: #ec4899;
   --accent-green: #10b981;
-  --accent-red: #ef4444;
+  --accent-red: var(--color-danger);
   --accent-yellow: #f59e0b;
-  --gradient-primary: linear-gradient(135deg, #06b6d4, #8b5cf6);
+  --gradient-primary: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
   --gradient-hover: linear-gradient(135deg, #0891b2, #7c3aed);
   --shadow-lg: 0 10px 40px rgba(0, 0, 0, 0.4);
   --shadow-glow: 0 0 20px rgba(6, 182, 212, 0.15);
-  --radius: 12px;
-  --radius-sm: 8px;
-  --radius-lg: 16px;
+  --radius: var(--radius-md);
   --sidebar-width: 260px;
-  --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition: var(--transition-normal);
 }
 
 /* Light theme overrides */
@@ -986,4 +1011,9 @@ body {
   .stats-grid { grid-template-columns: 1fr; }
   .quick-actions { grid-template-columns: 1fr; }
   .autopilot-controls { flex-direction: column; align-items: stretch; }
+}
+
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
 }

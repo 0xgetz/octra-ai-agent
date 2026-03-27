@@ -1,51 +1,89 @@
-# Octra Network AI Agent
-![octra](https://github.com/0xgetz/octra-ai-agent/raw/refs/heads/main/octra_network_dashboard.png)
+# 🤖 Octra Network AI Agent
 
-A modern, full-featured AI Agent platform with autopilot capabilities. Supports both OpenAI and Anthropic Claude APIs. Users bring their own API keys - nothing stored server-side.
+![Node.js](https://img.shields.io/badge/Node.js-18+-green?style=flat-square&logo=node.js)
+![License](https://img.shields.io/badge/license-MIT-blue?style=flat-square)
+![Version](https://img.shields.io/badge/version-2.0.0-purple?style=flat-square)
+![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen?style=flat-square)
 
-## Features
+A modern, full-featured AI Agent platform with autopilot capabilities. Supports OpenAI and Anthropic Claude. Bring your own API keys — nothing stored server-side.
 
-- **Dual AI Provider Support** - OpenAI (GPT-4o, GPT-4, GPT-3.5-turbo) and Claude (claude-sonnet-4, claude-3-haiku)
-- **Autopilot Mode** - Define a goal, AI breaks it into steps and executes them automatically
-- **Interactive Chat** - Full chat with markdown rendering, code highlighting, and message history
-- **Code Lab** - AI-powered code generation, analysis, refactoring, and explanation
-- **Modern Dark UI** - Glassmorphism design with cyan/purple gradients
-- **Privacy First** - API keys stored in browser localStorage only, never on the server
-- **Responsive** - Works on desktop, tablet, and mobile
+![Dashboard](octra_network_dashboard.png)
 
-## Quick Start
+## ✨ Features
+
+- **Dual AI Provider** — OpenAI (GPT-4o, GPT-4) and Claude (claude-opus-4-5, claude-sonnet-4-5)
+- **Autopilot Mode** — Define a goal, AI breaks it into steps and executes them
+- **Interactive Chat** — Full chat with markdown rendering and syntax highlighting
+- **Code Lab** — AI-powered code generation, analysis, refactoring, and explanation
+- **Security** — Helmet.js headers, rate limiting, API keys never stored server-side
+- **Modern Dark UI** — Glassmorphism design with cyan/purple gradients
+- **Privacy First** — API keys in browser localStorage only
+
+## 🚀 Quick Start
+
+### Local
 
 ```bash
+git clone https://github.com/0xgetz/octra-ai-agent
+cd octra-ai-agent
 npm install
 npm start
 ```
 
-Then open http://localhost:3000
+Open http://localhost:3000
 
-## Setup
+### Docker
 
-1. Clone or download this project
-2. Run `npm install`
-3. Run `npm start`
-4. Open http://localhost:3000 in your browser
-5. Go to Settings and enter your OpenAI and/or Claude API key
-6. Start chatting or use Autopilot mode!
+```bash
+docker build -t octra-ai-agent .
+docker run -p 3000:3000 octra-ai-agent
+```
 
-## API Keys
+### Development
 
-- **OpenAI**: Get yours at https://platform.openai.com/api-keys
-- **Claude**: Get yours at https://console.anthropic.com/settings/keys
+```bash
+npm run dev   # auto-reload with --watch
+```
 
-## Tech Stack
+## 🔑 API Keys
 
-- **Backend**: Node.js, Express
-- **Frontend**: Vanilla JS (no framework), CSS3 with glassmorphism
-- **AI**: OpenAI API, Anthropic Claude API (proxied through backend)
+- **OpenAI**: https://platform.openai.com/api-keys
+- **Claude**: https://console.anthropic.com/settings/keys
 
-## Architecture
+## 📡 API Reference
 
-The frontend sends API keys with each request. The Express backend proxies requests to OpenAI/Anthropic using Node's native `https` module. No keys are stored on the server. Sessions are in-memory only.
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/health` | Health check |
+| GET | `/api/models` | Available models per provider |
+| POST | `/api/chat` | Single chat completion |
+| POST | `/api/autopilot` | Multi-step goal execution |
+| POST | `/api/analyze` | Code analysis/generation |
 
-## License
+### POST /api/chat
+
+```json
+{
+  "provider": "openai",
+  "apiKey": "sk-...",
+  "model": "gpt-4o",
+  "messages": [{ "role": "user", "content": "Hello!" }],
+  "temperature": 0.7,
+  "maxTokens": 2048
+}
+```
+
+## 🏗 Architecture
+
+- **Backend**: Node.js 18+ (ESM), Express, Helmet, express-rate-limit
+- **Frontend**: Vanilla JS, CSS3 glassmorphism
+- **AI**: OpenAI API + Anthropic Claude API (proxied)
+- **Sessions**: In-memory (no persistence)
+
+## 🤝 Contributing
+
+PRs welcome! Please open an issue first for major changes.
+
+## 📄 License
 
 MIT
