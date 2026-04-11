@@ -1017,3 +1017,36 @@ html { scroll-behavior: smooth; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
 }
+
+/* ── Streaming chat additions ── */
+.cursor-blink {
+  display: inline-block;
+  animation: blink 1s step-end infinite;
+  opacity: 1;
+  color: var(--accent-cyan, #00f5ff);
+  font-weight: bold;
+  margin-left: 1px;
+}
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+/* FEAT-03: Usage/cost info row */
+.usage-info {
+  font-size: 0.72rem;
+  opacity: 0.5;
+  padding: 2px 12px 8px 56px;
+  color: var(--text-secondary, #888);
+  font-family: monospace;
+}
+
+/* Step status colors */
+.step-item.pending .step-icon { color: #888; }
+.step-item.running .step-icon { color: var(--accent-cyan, #00f5ff); }
+.step-item.completed .step-icon { color: #22c55e; }
+.step-item.failed .step-icon { color: #ef4444; }
+
+/* Key status colors */
+.key-status.configured { color: #22c55e; }
+.key-status.not-configured { color: #ef4444; }

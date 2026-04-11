@@ -20,6 +20,7 @@
     <!-- CDN libs for markdown and code highlighting -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.0/marked.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
     <!-- Font Awesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -149,7 +150,7 @@
                         <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
                     </select>
                     <button class="icon-btn" id="clear-chat-btn" title="Clear Chat" aria-label="Clear chat history"><i class="fas fa-trash"></i></button>
-                    <button class="icon-btn" id="export-chat-btn" title="Export Chat" aria-label="Export chat"><i class="fas fa-download"></i></button>
+                    <button class="icon-btn" id="export-chat-btn" title="Export Chat as JSON" aria-label="Export chat as JSON"><i class="fas fa-download"></i></button>
                 </div>
             </div>
             <div class="chat-container">
@@ -219,6 +220,15 @@
                 <div class="section-card codelab-input-panel">
                     <h2><i class="fas fa-keyboard"></i> Input</h2>
                     <textarea id="codelab-input" class="code-textarea" placeholder="Paste your code here or describe what you want to generate..." rows="15" spellcheck="false"></textarea>
+                    <div class="codelab-model-row" style="display:flex;gap:8px;margin-bottom:12px;">
+                        <select id="codelab-provider" class="select-input" style="flex:1">
+                            <option value="openai">OpenAI</option>
+                            <option value="claude">Claude</option>
+                        </select>
+                        <select id="codelab-model" class="select-input" style="flex:2">
+                            <option value="gpt-4o">GPT-4o</option>
+                        </select>
+                    </div>
                     <div class="codelab-actions">
                         <button class="action-btn" data-action="generate"><i class="fas fa-magic"></i> Generate</button>
                         <button class="action-btn" data-action="analyze"><i class="fas fa-search"></i> Analyze</button>
@@ -286,6 +296,10 @@
                 <div class="setting-group">
                     <label for="max-tokens-input">Max Tokens</label>
                     <input type="number" id="max-tokens-input" value="4096" min="100" max="128000" class="text-input">
+                </div>
+                <div class="setting-group">
+                    <label for="system-prompt-input">System Prompt <span style="font-size:0.8em;opacity:0.7">(optional, applied to all chats)</span></label>
+                    <textarea id="system-prompt-input" class="goal-input" placeholder="e.g. You are a helpful assistant that responds concisely in bullet points..." rows="3" style="min-height:80px"></textarea>
                 </div>
             </div>
 
