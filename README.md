@@ -2,25 +2,29 @@
 
 ![Node.js](https://img.shields.io/badge/Node.js-18+-green?style=flat-square&logo=node.js)
 ![License](https://img.shields.io/badge/license-MIT-blue?style=flat-square)
-![Version](https://img.shields.io/badge/version-3.0.0-purple?style=flat-square)
+![Version](https://img.shields.io/badge/version-3.1.0-purple?style=flat-square)
 ![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen?style=flat-square)
 
-An advanced, multi-provider AI agent platform: agentic tool use, retrieval-augmented generation (RAG), a multi-agent autopilot, conversation memory, and cost-aware model routing. Bring your own API keys — nothing stored server-side.
+An advanced, multi-provider AI agent platform: **MCP tool servers**, agentic tool use, vision, hybrid RAG, a multi-agent autopilot, personas, conversation memory, and cost-aware model routing — in one lightweight, zero-infra app. Bring your own API keys — nothing stored server-side.
 
 ![Dashboard](octra_network_dashboard.png)
 
 ## ✨ Features
 
-- **5 AI Providers** — OpenAI, Anthropic Claude, Google Gemini, Groq, and OpenRouter behind one unified interface
-- **Agentic Tool Use** — A ReAct loop with safe built-in tools: web search, URL fetch (SSRF-guarded), a sandboxed calculator, and datetime — works on any provider
-- **RAG / Knowledge Base** — Upload documents and ground answers with citations; offline TF-IDF retrieval, no embedding key required
-- **Multi-Agent Autopilot** — Plan → execute → self-critique → retry, with optional tool access, one-shot replanning, and a hard token budget
-- **Conversation Memory** — Persistent history, branching from any message, and read-only share links
-- **Cost-Aware Routing** — Auto-pick the cheapest/fastest/best model from the providers you've configured, with automatic fallback
-- **Code Lab** — AI-powered code generation, analysis, refactoring, and explanation
-- **Streaming Chat** — SSE word-by-word streaming across all providers
-- **Security** — Helmet CSP/CORS, rate limiting, input validation; API keys live in the browser only
-- **Single source of truth** — Standalone server and serverless build share one app factory (no drift)
+- **6 Providers** — OpenAI, Claude, Gemini, Groq, OpenRouter, plus **any OpenAI-compatible / local endpoint** (Ollama, LM Studio, vLLM) — one unified adapter
+- **MCP client** — connect Model Context Protocol servers (Streamable HTTP) and use their tools in the agent; no longer limited to built-ins
+- **Agentic Tool Use** — a provider-agnostic ReAct loop with safe built-ins: web search, URL fetch (SSRF-guarded), sandboxed calculator, datetime — plus any MCP tool
+- **Vision** — attach images in chat; formatted correctly for OpenAI, Claude, and Gemini
+- **Hybrid RAG** — upload documents; optional embeddings (OpenAI/Gemini) blended with TF-IDF for semantic + keyword retrieval with citations. Zero-key TF-IDF default
+- **Multi-Agent Autopilot** — plan → execute → self-critique → retry, optional tools, one-shot replanning, hard token budget
+- **Personas** — reusable system-prompt + model presets, applied from the chat header
+- **Conversation Memory** — persistent history, branching, read-only share links
+- **Cost-Aware Routing** — auto-pick the cheapest/fastest/best model from your configured providers, with automatic fallback
+- **Code Lab** — AI-powered code generation, analysis, refactoring, explanation
+- **Streaming** everywhere · **token + cost** transparency · **Helmet/CORS/rate-limit** security · keys **client-side only**
+- **Single source of truth** — standalone server and serverless build share one app factory
+
+See [COMPARISON.md](COMPARISON.md) for how octra stacks up against the top GitHub AI tools.
 
 ## 🚀 Quick Start
 
@@ -66,6 +70,7 @@ Copy `.env.example` to `.env` and set:
 - **Gemini**: https://aistudio.google.com/app/apikey
 - **Groq**: https://console.groq.com/keys
 - **OpenRouter**: https://openrouter.ai/keys
+- **Custom / Local**: no key needed for Ollama/LM Studio — set the base URL in Settings (e.g. `http://localhost:11434/v1`)
 
 ## 📡 API Reference
 
@@ -83,7 +88,10 @@ Copy `.env.example` to `.env` and set:
 | POST | `/api/analyze` | Code analysis/generation |
 | POST | `/api/rag/documents` · GET · DELETE | Manage knowledge-base documents |
 | POST | `/api/rag/search` | Retrieve top chunks for a query |
-| POST | `/api/rag/chat` | Chat grounded in uploaded documents |
+| POST | `/api/rag/embed` | Build embeddings for hybrid retrieval |
+| POST | `/api/rag/chat` | Chat grounded in uploaded documents (lexical or hybrid) |
+| POST | `/api/mcp/connect` · GET `/api/mcp/servers` · DELETE | Manage MCP tool servers |
+| GET/POST | `/api/personas` · GET/PATCH/DELETE `/api/personas/:id` | Manage personas / custom assistants |
 | GET/POST | `/api/conversations` | List / create conversations |
 | GET/PATCH/DELETE | `/api/conversations/:id` | Read / rename / delete a conversation |
 | POST | `/api/conversations/:id/messages` | Append a message |

@@ -9,6 +9,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.1.0] - 2026-06-01
+
+Competitive feature push to match the bar set by the top self-hostable AI tools
+(LobeChat, Open WebUI, LibreChat). All additive — no breaking changes.
+
+### Added
+- **MCP client** (`lib/mcp.js`) — connect Model Context Protocol servers over the
+  Streamable HTTP transport (JSON-RPC 2.0; JSON or SSE responses). Their tools are
+  namespaced (`mcp__<server>__<tool>`) and merged into the Agent loop and
+  autopilot, so the 4 built-in tools become an open-ended catalogue. Routes:
+  `/api/mcp/connect`, `/api/mcp/servers`, `DELETE /api/mcp/servers/:id`. UI in Settings.
+- **Custom / local provider** — a sixth provider for any OpenAI-compatible endpoint
+  (Ollama, LM Studio, vLLM, LocalAI, private routers). User supplies base URL + models
+  in Settings; works with no API key. Reinforces the privacy/self-host story.
+- **Vision (image) input** — attach images in Chat; formatted per provider
+  (OpenAI `image_url`, Claude base64 blocks, Gemini `inline_data`).
+- **Hybrid RAG** — optional embeddings (OpenAI/Gemini) build a vector index that is
+  blended with TF-IDF (lexical + semantic) and reranked. TF-IDF stays the zero-key
+  default. Routes: `/api/rag/embed`; `/api/rag/chat` accepts an embedding key.
+- **Personas / custom assistants** — save reusable system-prompt + model presets,
+  pick them from the Chat header. CRUD via `/api/personas/*`, persisted with the
+  conversation store. UI in Settings.
+
+### Changed
+- `runAgentLoop` and `runAutopilot` accept `extraTools` (MCP) and `baseURL`.
+- `/api/models` now includes the `custom` provider; the frontend renders a base-URL
+  field and free-form model entry for it.
+- Test suite grown to 57 (added MCP client round-trip incl. SSE framing, hybrid RAG,
+  personas, custom-provider + vision end-to-end against a mock upstream).
+
 ## [3.0.0] - 2026-06-01
 
 A major upgrade turning the chat app into a genuine agent platform. No breaking

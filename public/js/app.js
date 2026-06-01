@@ -98,6 +98,32 @@ class SettingsManager {
     this.maxTokens = parseInt(localStorage.getItem('octra_max_tokens') || '4096');
     this.theme = localStorage.getItem('octra_theme') || 'dark';
     this.systemPrompt = localStorage.getItem('octra_system_prompt') || '';
+    // Custom / local OpenAI-compatible endpoint
+    this.customBaseURL = localStorage.getItem('octra_custom_base_url') || 'http://localhost:11434/v1';
+    this.customModels = JSON.parse(localStorage.getItem('octra_custom_models') || '[]');
+    if (this.customModels.length) MODEL_CATALOGUE.custom = this.customModels;
+  }
+
+  baseURLFor(provider) {
+    return provider === 'custom' ? this.customBaseURL : undefined;
+  }
+
+  saveCustomEndpoint() {
+    var base = (document.getElementById('custom-base-url') || {}).value || '';
+    var modelsRaw = (document.getElementById('custom-models') || {}).value || '';
+    var key = (document.getElementById('custom-key') || {}).value || '';
+    this.customBaseURL = base.trim() || 'http://localhost:11434/v1';
+    this.customModels = modelsRaw.split(',').map(function (s) { return s.trim(); }).filter(Boolean);
+    this.keys.custom = key.trim();
+    localStorage.setItem('octra_custom_base_url', this.customBaseURL);
+    localStorage.setItem('octra_custom_models', JSON.stringify(this.customModels));
+    localStorage.setItem('octra_custom_key', this.keys.custom);
+    MODEL_CATALOGUE.custom = this.customModels;
+    this.updateKeyStatus();
+    this.updateConnectionStatus();
+    app.showToast('Custom endpoint saved', 'success');
+    var cp = document.getElementById('chat-provider');
+    bindProviderModel('chat-provider', 'chat-model', cp ? cp.value : this.defaultProvider);
   }
 
   init() {
@@ -106,6 +132,14 @@ class SettingsManager {
       var input = document.getElementById(p + '-key');
       if (input) input.value = self.keys[p];
     });
+    var customBase = document.getElementById('custom-base-url');
+    var customModels = document.getElementById('custom-models');
+    var customKey = document.getElementById('custom-key');
+    if (customBase) customBase.value = this.customBaseURL;
+    if (customModels) customModels.value = (this.customModels || []).join(', ');
+    if (customKey) customKey.value = this.keys.custom || '';
+    var saveCustomBtn = document.getElementById('save-custom-btn');
+    if (saveCustomBtn) saveCustomBtn.addEventListener('click', function () { self.saveCustomEndpoint(); });
 
     var defaultProviderSelect = document.getElementById('default-provider');
     var tempSlider = document.getElementById('temperature-slider');
@@ -268,6 +302,8 @@ class ChatManager {
   constructor() {
     this.messages = [];
     this.isLoading = false;
+    this.pendingImages = [];
+    this.activePersona = null;
   }
 
   init() {
@@ -291,7 +327,66 @@ class ChatManager {
     var exportChatBtn = document.getElementById('export-chat-btn');
     if (exportChatBtn) exportChatBtn.addEventListener('click', function () { self.exportChat(); });
 
+    // Vision: attach images
+    var attachBtn = document.getElementById('attach-image-btn');
+    var imageInput = document.getElementById('chat-image-input');
+    if (attachBtn && imageInput) {
+      attachBtn.addEventListener('click', function () { imageInput.click(); });
+      imageInput.addEventListener('change', function () { self.handleImageFiles(imageInput.files); imageInput.value = ''; });
+    }
+
+    // Persona picker
+    var personaSel = document.getElementById('chat-persona');
+    if (personaSel) {
+      personaSel.addEventListener('change', function () { self.applyPersona(personaSel.value); });
+    }
+
     bindProviderModel('chat-provider', 'chat-model', app.settings.defaultProvider);
+  }
+
+  handleImageFiles(files) {
+    var self = this;
+    Array.prototype.forEach.call(files || [], function (file) {
+      if (!file.type || file.type.indexOf('image/') !== 0) return;
+      var reader = new FileReader();
+      reader.onload = function () {
+        self.pendingImages.push({ name: file.name, dataUrl: String(reader.result || '') });
+        self.renderImageStrip();
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  renderImageStrip() {
+    var strip = document.getElementById('chat-image-strip');
+    if (!strip) return;
+    if (!this.pendingImages.length) { strip.style.display = 'none'; strip.innerHTML = ''; return; }
+    var self = this;
+    strip.style.display = 'flex';
+    strip.innerHTML = '';
+    this.pendingImages.forEach(function (img, idx) {
+      var chip = document.createElement('span');
+      chip.className = 'image-chip';
+      chip.innerHTML = '<img src="' + img.dataUrl + '" alt=""> ';
+      var x = document.createElement('button');
+      x.className = 'icon-btn';
+      x.innerHTML = '<i class="fas fa-times"></i>';
+      x.addEventListener('click', function () { self.pendingImages.splice(idx, 1); self.renderImageStrip(); });
+      chip.appendChild(x);
+      strip.appendChild(chip);
+    });
+  }
+
+  applyPersona(personaId) {
+    if (!personaId) { this.activePersona = null; return; }
+    var p = app.personas ? app.personas.byId(personaId) : null;
+    if (!p) { this.activePersona = null; return; }
+    this.activePersona = p;
+    var providerSel = document.getElementById('chat-provider');
+    var modelSel = document.getElementById('chat-model');
+    if (p.provider && providerSel) { providerSel.value = p.provider; populateModelSelect(modelSel, p.provider); }
+    if (p.model && modelSel) modelSel.value = p.model;
+    app.showToast('Persona "' + p.name + '" applied', 'info');
   }
 
   async apiErrorMessage(response) {
@@ -325,12 +420,17 @@ class ChatManager {
     var apiKey = app.settings.getActiveKey(provider);
     var mode = this.currentMode();
 
-    if (!apiKey) {
+    // Custom/local endpoints may legitimately need no key.
+    if (!apiKey && provider !== 'custom') {
       app.showToast('Please configure your ' + (PROVIDER_LABELS[provider] || provider) + ' API key in Settings', 'error');
       return;
     }
+    if (!apiKey) apiKey = 'none';
 
-    this.addMessage('user', text);
+    var images = this.pendingImages.map(function (i) { return i.dataUrl; });
+    this.addMessage('user', text, images);
+    this.pendingImages = [];
+    this.renderImageStrip();
     input.value = '';
     input.style.height = 'auto';
     this.setLoading(true);
@@ -347,6 +447,12 @@ class ChatManager {
     this.saveHistory();
   }
 
+  // Persona system prompt overrides the global one when a persona is active.
+  effectiveSystemPrompt() {
+    if (this.activePersona && this.activePersona.systemPrompt) return this.activePersona.systemPrompt;
+    return app.settings.systemPrompt || undefined;
+  }
+
   async runStreamMode(provider, apiKey, model) {
     var assistantMsgEl = this.createStreamingMessageEl();
     var self = this;
@@ -358,7 +464,8 @@ class ChatManager {
         body: JSON.stringify({
           provider: provider, apiKey: apiKey, model: model, messages: this.messages,
           temperature: app.settings.temperature, maxTokens: app.settings.maxTokens,
-          systemPrompt: app.settings.systemPrompt || undefined,
+          systemPrompt: this.effectiveSystemPrompt(),
+          baseURL: app.settings.baseURLFor(provider),
         }),
       });
       if (!response.ok) {
@@ -392,10 +499,17 @@ class ChatManager {
   async runRagMode(provider, apiKey, model) {
     var el = this.createStreamingMessageEl();
     try {
+      var ragBody = { provider: provider, apiKey: apiKey, model: model, messages: this.messages, temperature: app.settings.temperature, maxTokens: app.settings.maxTokens, baseURL: app.settings.baseURLFor(provider) };
+      // Optional semantic retrieval using a configured embedding provider.
+      if (app.knowledge && app.knowledge.semanticEnabled()) {
+        var ep = app.knowledge.embedProvider();
+        var ek = app.settings.getActiveKey(ep);
+        if (ek) { ragBody.embedProvider = ep; ragBody.embedApiKey = ek; }
+      }
       var response = await fetch('/api/rag/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ provider: provider, apiKey: apiKey, model: model, messages: this.messages, temperature: app.settings.temperature, maxTokens: app.settings.maxTokens }),
+        body: JSON.stringify(ragBody),
       });
       var data = await response.json();
       if (!response.ok || !data.success) {
@@ -425,7 +539,7 @@ class ChatManager {
       var response = await fetch('/api/agent', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ provider: provider, apiKey: apiKey, model: model, query: query, temperature: app.settings.temperature, maxTokens: app.settings.maxTokens }),
+        body: JSON.stringify({ provider: provider, apiKey: apiKey, model: model, query: query, temperature: app.settings.temperature, maxTokens: app.settings.maxTokens, baseURL: app.settings.baseURLFor(provider) }),
       });
       if (!response.ok) {
         var errMsg = await this.apiErrorMessage(response);
@@ -556,8 +670,10 @@ class ChatManager {
     container.scrollTop = container.scrollHeight;
   }
 
-  addMessage(role, content) {
-    this.messages.push({ role: role, content: content });
+  addMessage(role, content, images) {
+    var msg = { role: role, content: content };
+    if (images && images.length) msg.images = images;
+    this.messages.push(msg);
     var container = document.getElementById('chat-messages');
     if (!container) return;
     var welcome = container.querySelector('.welcome-message');
@@ -574,6 +690,17 @@ class ChatManager {
       this._decorateCode(contentDiv);
     } else {
       contentDiv.textContent = content;
+      if (images && images.length) {
+        var gallery = document.createElement('div');
+        gallery.className = 'msg-images';
+        images.forEach(function (src) {
+          var im = document.createElement('img');
+          im.src = src;
+          im.alt = 'attached image';
+          gallery.appendChild(im);
+        });
+        contentDiv.appendChild(gallery);
+      }
     }
     msgDiv.appendChild(avatar);
     msgDiv.appendChild(contentDiv);
@@ -666,10 +793,11 @@ class AutopilotEngine {
     var provider = providerSelect ? providerSelect.value : 'openai';
     var model = modelSelect ? modelSelect.value : 'gpt-4o';
     var apiKey = app.settings.getActiveKey(provider);
-    if (!apiKey) {
+    if (!apiKey && provider !== 'custom') {
       app.showToast('Please configure your ' + (PROVIDER_LABELS[provider] || provider) + ' API key in Settings', 'error');
       return;
     }
+    if (!apiKey) apiKey = 'none';
 
     var useTools = !!(document.getElementById('autopilot-tools') || {}).checked;
     var selfCritique = !!(document.getElementById('autopilot-critique') || { checked: true }).checked;
@@ -704,6 +832,7 @@ class AutopilotEngine {
           provider: provider, apiKey: apiKey, model: model, goal: goal,
           temperature: app.settings.temperature, maxTokens: app.settings.maxTokens,
           useTools: useTools, selfCritique: selfCritique,
+          baseURL: app.settings.baseURLFor(provider),
         }),
       });
       if (!response.ok) {
@@ -880,7 +1009,8 @@ class CodeLab {
     var provider = providerSelect ? providerSelect.value : app.settings.defaultProvider;
     var model = modelSelect ? modelSelect.value : 'gpt-4o';
     var apiKey = app.settings.getActiveKey(provider);
-    if (!apiKey) { app.showToast('Please configure an API key in Settings', 'error'); return; }
+    if (!apiKey && provider !== 'custom') { app.showToast('Please configure an API key in Settings', 'error'); return; }
+    if (!apiKey) apiKey = 'none';
 
     var outputEl = document.getElementById('codelab-output');
     var copyBtn = document.getElementById('copy-output-btn');
@@ -893,6 +1023,7 @@ class CodeLab {
         body: JSON.stringify({
           provider: provider, apiKey: apiKey, model: model, code: input, action: action, prompt: input,
           temperature: app.settings.temperature, maxTokens: app.settings.maxTokens,
+          baseURL: app.settings.baseURLFor(provider),
         }),
       });
       var data = await response.json();
@@ -951,7 +1082,44 @@ class KnowledgeManager {
         reader.readAsText(file);
       });
     }
+    var semantic = document.getElementById('rag-semantic');
+    if (semantic) {
+      semantic.checked = localStorage.getItem('octra_rag_semantic') === '1';
+      semantic.addEventListener('change', function () {
+        localStorage.setItem('octra_rag_semantic', semantic.checked ? '1' : '0');
+      });
+    }
+    var embedBtn = document.getElementById('rag-embed-btn');
+    if (embedBtn) embedBtn.addEventListener('click', function () { self.embedNow(); });
     this.refresh();
+  }
+
+  semanticEnabled() {
+    var el = document.getElementById('rag-semantic');
+    return !!(el && el.checked);
+  }
+
+  embedProvider() {
+    var el = document.getElementById('rag-embed-provider');
+    return el ? el.value : 'openai';
+  }
+
+  async embedNow() {
+    var provider = this.embedProvider();
+    var apiKey = app.settings.getActiveKey(provider);
+    if (!apiKey) { app.showToast('Configure your ' + (PROVIDER_LABELS[provider] || provider) + ' key first', 'error'); return; }
+    app.showToast('Embedding documents...', 'info');
+    try {
+      var res = await fetch('/api/rag/embed', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ provider: provider, apiKey: apiKey, baseURL: app.settings.baseURLFor(provider) }),
+      });
+      var data = await res.json();
+      if (data.success) app.showToast('Embedded ' + data.embedded + ' chunk(s)', 'success');
+      else app.showToast(data.error || 'Embedding failed', 'error');
+    } catch (err) {
+      app.showToast(err.message || 'Network error', 'error');
+    }
   }
 
   async addDoc() {
@@ -1022,7 +1190,176 @@ class KnowledgeManager {
   }
 }
 
-/* ── 6. OctraAgent (main app) ── */
+/* ── 6. PersonaManager ── */
+
+class PersonaManager {
+  constructor() { this.personas = []; }
+
+  init() {
+    var self = this;
+    var createBtn = document.getElementById('persona-create-btn');
+    if (createBtn) createBtn.addEventListener('click', function () { self.create(); });
+    this.refresh();
+  }
+
+  byId(id) {
+    return this.personas.find(function (p) { return p.id === id; }) || null;
+  }
+
+  async refresh() {
+    try {
+      var data = await (await fetch('/api/personas')).json();
+      this.personas = data.personas || [];
+    } catch { this.personas = []; }
+    this.renderList();
+    this.renderPicker();
+  }
+
+  renderPicker() {
+    var sel = document.getElementById('chat-persona');
+    if (!sel) return;
+    var current = sel.value;
+    sel.innerHTML = '<option value="">No persona</option>';
+    this.personas.forEach(function (p) {
+      var opt = document.createElement('option');
+      opt.value = p.id; opt.textContent = p.name;
+      sel.appendChild(opt);
+    });
+    sel.value = current;
+  }
+
+  renderList() {
+    var list = document.getElementById('persona-list');
+    if (!list) return;
+    if (!this.personas.length) {
+      list.innerHTML = '<div class="empty-state"><i class="fas fa-masks-theater"></i><p>No personas yet.</p></div>';
+      return;
+    }
+    var self = this;
+    list.innerHTML = '';
+    this.personas.forEach(function (p) {
+      var row = document.createElement('div');
+      row.className = 'activity-item';
+      row.innerHTML = '<i class="fas fa-masks-theater"></i><span>' + self._esc(p.name) + (p.model ? ' <small>(' + self._esc(p.model) + ')</small>' : '') + '</span>';
+      var del = document.createElement('button');
+      del.className = 'icon-btn';
+      del.innerHTML = '<i class="fas fa-trash"></i>';
+      del.title = 'Delete persona';
+      del.addEventListener('click', function () { self.remove(p.id); });
+      row.appendChild(del);
+      list.appendChild(row);
+    });
+  }
+
+  async create() {
+    var nameEl = document.getElementById('persona-name');
+    var promptEl = document.getElementById('persona-prompt');
+    var name = nameEl ? nameEl.value.trim() : '';
+    var systemPrompt = promptEl ? promptEl.value.trim() : '';
+    if (!name) { app.showToast('Persona needs a name', 'error'); return; }
+    var providerSel = document.getElementById('chat-provider');
+    var modelSel = document.getElementById('chat-model');
+    try {
+      var res = await fetch('/api/personas', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: name, systemPrompt: systemPrompt,
+          provider: providerSel ? providerSel.value : null,
+          model: modelSel ? modelSel.value : null,
+        }),
+      });
+      var data = await res.json();
+      if (data.success) {
+        app.showToast('Persona "' + name + '" saved', 'success');
+        if (nameEl) nameEl.value = '';
+        if (promptEl) promptEl.value = '';
+        this.refresh();
+      } else { app.showToast(data.error || 'Failed', 'error'); }
+    } catch (err) { app.showToast(err.message || 'Network error', 'error'); }
+  }
+
+  async remove(id) {
+    try {
+      await fetch('/api/personas/' + encodeURIComponent(id), { method: 'DELETE' });
+      this.refresh();
+    } catch (err) { app.showToast(err.message || 'Failed', 'error'); }
+  }
+
+  _esc(str) { var d = document.createElement('div'); d.textContent = str; return d.innerHTML; }
+}
+
+/* ── 7. McpManager ── */
+
+class McpManager {
+  init() {
+    var self = this;
+    var connectBtn = document.getElementById('mcp-connect-btn');
+    if (connectBtn) connectBtn.addEventListener('click', function () { self.connect(); });
+    this.refresh();
+  }
+
+  async refresh() {
+    var list = document.getElementById('mcp-server-list');
+    if (!list) return;
+    try {
+      var data = await (await fetch('/api/mcp/servers')).json();
+      var servers = data.servers || [];
+      if (!servers.length) {
+        list.innerHTML = '<div class="empty-state"><i class="fas fa-plug"></i><p>No MCP servers connected.</p></div>';
+        return;
+      }
+      var self = this;
+      list.innerHTML = '';
+      servers.forEach(function (s) {
+        var row = document.createElement('div');
+        row.className = 'activity-item';
+        row.innerHTML = '<i class="fas fa-plug"></i><span>' + self._esc(s.label) + ' <small>(' + s.tools.length + ' tools)</small></span>';
+        var del = document.createElement('button');
+        del.className = 'icon-btn';
+        del.innerHTML = '<i class="fas fa-trash"></i>';
+        del.title = 'Disconnect';
+        del.addEventListener('click', function () { self.remove(s.id); });
+        row.appendChild(del);
+        list.appendChild(row);
+      });
+    } catch { /* ignore */ }
+  }
+
+  async connect() {
+    var urlEl = document.getElementById('mcp-url');
+    var authEl = document.getElementById('mcp-auth');
+    var url = urlEl ? urlEl.value.trim() : '';
+    if (!url) { app.showToast('Enter an MCP server URL', 'error'); return; }
+    var headers = {};
+    if (authEl && authEl.value.trim()) headers.Authorization = authEl.value.trim();
+    app.showToast('Connecting to MCP server...', 'info');
+    try {
+      var res = await fetch('/api/mcp/connect', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: url, headers: headers }),
+      });
+      var data = await res.json();
+      if (data.success) {
+        app.showToast('Connected: ' + data.server.label + ' (' + data.server.tools.length + ' tools)', 'success');
+        if (urlEl) urlEl.value = '';
+        if (authEl) authEl.value = '';
+        this.refresh();
+      } else { app.showToast(data.error || 'Connection failed', 'error'); }
+    } catch (err) { app.showToast(err.message || 'Network error', 'error'); }
+  }
+
+  async remove(id) {
+    try {
+      await fetch('/api/mcp/servers/' + encodeURIComponent(id), { method: 'DELETE' });
+      app.showToast('MCP server disconnected', 'info');
+      this.refresh();
+    } catch (err) { app.showToast(err.message || 'Failed', 'error'); }
+  }
+
+  _esc(str) { var d = document.createElement('div'); d.textContent = str; return d.innerHTML; }
+}
+
+/* ── 8. OctraAgent (main app) ── */
 
 class OctraAgent {
   constructor() {
@@ -1031,6 +1368,8 @@ class OctraAgent {
     this.autopilot = new AutopilotEngine();
     this.codelab = new CodeLab();
     this.knowledge = new KnowledgeManager();
+    this.personas = new PersonaManager();
+    this.mcp = new McpManager();
     this.stats = JSON.parse(localStorage.getItem('octra_stats') || '{"messages":0,"tasks":0,"tokens":0}');
     this.activities = [];
   }
@@ -1042,11 +1381,13 @@ class OctraAgent {
     this.autopilot.init();
     this.codelab.init();
     this.knowledge.init();
+    this.personas.init();
+    this.mcp.init();
     this.setupNavigation();
     this.setupHamburger();
     this.updateDashboard();
     this.chat.loadHistory();
-    console.log('Octra Network AI Agent v3.0.0 initialized');
+    console.log('Octra Network AI Agent v3.1.0 initialized');
   }
 
   // Refresh provider/model catalogue from the server (keeps UI in sync with backend).
@@ -1060,6 +1401,10 @@ class OctraAgent {
           PROVIDER_ORDER.forEach(function (p) {
             if (data.providers[p] && data.providers[p].label) PROVIDER_LABELS[p] = data.providers[p].label;
           });
+        }
+        // Preserve the user's locally-configured custom/local models (server returns none).
+        if (this.settings && this.settings.customModels && this.settings.customModels.length) {
+          MODEL_CATALOGUE.custom = this.settings.customModels;
         }
       }
     } catch { /* offline — use static fallback */ }

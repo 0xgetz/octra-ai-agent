@@ -1050,3 +1050,14 @@ html { scroll-behavior: smooth; }
 /* Key status colors */
 .key-status.configured { color: #22c55e; }
 .key-status.not-configured { color: #ef4444; }
+
+/* ===== v3.1.0 additions: vision, personas, MCP, knowledge ===== */
+.image-strip { display: flex; gap: 8px; flex-wrap: wrap; padding: 8px 0; }
+.image-chip { position: relative; display: inline-flex; align-items: center; }
+.image-chip img { height: 48px; width: 48px; object-fit: cover; border-radius: 8px; border: 1px solid rgba(255,255,255,0.15); }
+.image-chip .icon-btn { position: absolute; top: -8px; right: -8px; background: rgba(0,0,0,0.6); border-radius: 50%; padding: 2px 5px; font-size: 0.7rem; }
+.msg-images { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+.msg-images img { max-height: 180px; max-width: 100%; border-radius: 10px; border: 1px solid rgba(255,255,255,0.12); }
+.toggle-label { user-select: none; }
+.tool-trace { margin-top: 8px; font-size: 0.8rem; opacity: 0.75; }
+#attach-image-btn { align-self: center; }

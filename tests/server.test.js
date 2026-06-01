@@ -145,3 +145,35 @@ describe('Conversation memory', () => {
     assert.equal(res.status, 404);
   });
 });
+
+describe('Personas', () => {
+  it('creates, lists, and deletes a persona', async () => {
+    const created = (await (await post('/api/personas', { name: 'Coder', systemPrompt: 'You write code', provider: 'openai', model: 'gpt-4o' })).json()).persona;
+    assert.ok(created.id);
+    const list = await (await fetch(`${BASE}/api/personas`)).json();
+    assert.ok(list.personas.some((p) => p.id === created.id));
+    const del = await fetch(`${BASE}/api/personas/${created.id}`, { method: 'DELETE' });
+    assert.equal(del.status, 200);
+  });
+});
+
+describe('MCP endpoints', () => {
+  it('lists no servers initially and 404s on unknown disconnect', async () => {
+    const list = await (await fetch(`${BASE}/api/mcp/servers`)).json();
+    assert.ok(Array.isArray(list.servers));
+    const del = await fetch(`${BASE}/api/mcp/servers/nope`, { method: 'DELETE' });
+    assert.equal(del.status, 404);
+  });
+  it('rejects a connect with no url', async () => {
+    const res = await post('/api/mcp/connect', {});
+    assert.equal(res.status, 400);
+  });
+});
+
+describe('GET /api/models includes custom provider', () => {
+  it('lists custom alongside the cloud providers', async () => {
+    const data = await (await fetch(`${BASE}/api/models`)).json();
+    assert.ok('custom' in data.models);
+    assert.equal(data.providers.custom.label, 'Custom / Local');
+  });
+});
