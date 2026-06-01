@@ -26,6 +26,16 @@ An advanced, multi-provider AI agent platform: **MCP tool servers**, agentic too
 
 See [COMPARISON.md](COMPARISON.md) for how octra stacks up against the top GitHub AI tools.
 
+## 📸 Screenshots
+
+| Dashboard | Chat (chat / agent / knowledge modes) |
+|---|---|
+| ![Dashboard](docs/screenshots/dashboard.png) | ![Chat](docs/screenshots/chat.png) |
+| **Autopilot** (multi-agent) | **Knowledge** (RAG + hybrid search) |
+| ![Autopilot](docs/screenshots/autopilot.png) | ![Knowledge](docs/screenshots/knowledge.png) |
+| **Settings** (6 providers · custom/local · MCP · personas) | |
+| ![Settings](docs/screenshots/settings.png) | |
+
 ## 🚀 Quick Start
 
 ### Local
