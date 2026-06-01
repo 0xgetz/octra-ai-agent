@@ -5,3 +5,6 @@ npm-debug.log*
 .env.*.local
 *.log
 .DS_Store
+
+# Local conversation persistence (PERSIST_DIR)
+.data/

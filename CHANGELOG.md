@@ -9,6 +9,49 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.0.0] - 2026-06-01
+
+A major upgrade turning the chat app into a genuine agent platform. No breaking
+changes to the existing chat/autopilot/analyze endpoints; everything new is
+additive.
+
+### Added
+- **Multi-provider core** — Google Gemini, Groq, and OpenRouter join OpenAI and
+  Claude. Unified `lib/providers.js` adapter handles all five behind one
+  interface, with streaming for each.
+- **Cost-aware auto-routing** — `POST /api/route` picks the best model for a
+  preference (`cheap`/`fast`/`quality`/`balanced`) from the providers you have.
+- **Provider fallback chain** — `callWithFallback()` tries providers in order so
+  a single outage doesn't break a request.
+- **Agentic tool use** — `POST /api/agent` runs a provider-agnostic ReAct loop
+  with safe, key-free tools: `calculator` (sandboxed arithmetic parser, no
+  `eval`), `web_search` (DuckDuckGo), `http_fetch` (SSRF-guarded), `datetime`.
+  Exposed in Chat via a "Agent" mode.
+- **RAG / Knowledge base** — upload documents (`/api/rag/*`); offline TF-IDF
+  retrieval grounds answers with citations via `/api/rag/chat`. New Knowledge
+  page in the UI. No embedding API key required.
+- **Multi-agent autopilot** — plan → execute → self-critique → retry, with an
+  optional one-shot replan and a hard token budget. Optional tool access per
+  run. New "Use tools" and "Self-critique" toggles in the UI.
+- **Conversation memory** — `/api/conversations/*`: persistent history,
+  branching from any message, and read-only share links (`/api/share/:id`).
+  Optional on-disk durability via `PERSIST_DIR`.
+- **Expanded test suite** — 32 tests across unit (`tests/unit.test.js`) and
+  integration (`tests/server.test.js`).
+
+### Changed
+- **De-duplicated the codebase** — all route logic now lives in
+  `lib/app-factory.js`, shared by `server.js` and `api/index.js`, which are now
+  thin entrypoints. The two deploy targets can no longer drift apart.
+- Shared request validation extracted to `lib/validation.js` with input clamping.
+- Frontend selectors now load providers/models dynamically from `/api/models`.
+
+### Fixed
+- **Lint was broken** — migrated from the unsupported legacy `.eslintrc.json` to
+  ESLint v10 flat config (`eslint.config.js`); `npm run lint` now passes.
+- **Test port race** — integration tests bind an ephemeral port and await a
+  clean close, eliminating the intermittent `EADDRINUSE` on port 3001.
+
 ## [2.2.0] - 2026-04-11
 
 ### Added
